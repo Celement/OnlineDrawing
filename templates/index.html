@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="js/vue.min.js"></script>
+    <!-- 引入Element UI样式 -->
+    <link rel="stylesheet" href="css/index.css">
+    <!-- 引入Element UI组件库 -->
+    <script src="js/index.js"></script>
+    <title>注射压力图表</title>
+    <style>
+   el-row {
+    margin-bottom: 20px;
+}
+
+el-row:last-child {
+    margin-bottom: 0;
+}
+  .el-col {
+    border-radius: 4px;
+  }
+  .bg-purple-dark {
+    background: #99a9bf;
+  }
+  .bg-purple {
+    background: #d3dce6;
+  }
+  .bg-purple-light {
+    background: #e5e9f2;
+  }
+  .grid-content {
+    border-radius: 4px;
+    min-height: 36px;
+  }
+  .row-bg {
+    padding: 10px 0;
+    background-color: #f9fafc;
+  }
+</style>
+</head>
+<body>
+<div>
+
+    <div id="app">
+         <el-row>
+          <el-col :span="8"><div class="grid-content"></div></el-col>
+          <el-col :span="8"><div class="grid-content bg-purple-light" style="text-align: center">压力测试图</div></el-col>
+          <el-col :span="8"><div class="grid-content"></div></el-col>
+         </el-row>
+
+          <el-row>
+          <el-col :span="8"><div class="grid-content"></div></el-col>
+          <el-col :span="8">
+              <div class="grid-content bg-purple-light">
+                     <form method="post" action="/test">
+                            <label>输入x坐标以逗号隔开:</label>
+                            <input type="text" id="x_values" name="x_values" style="width: 350px" >
+                            <br>
+                         <br>
+                            <label>输入y坐标以逗号隔开:</label>
+                            <input type="text" id="y_values" name="y_values" style="width: 350px" >
+                            <br>
+                         <br>
+                            <label style="margin-left: 53px">输入注射压力:</label>
+                            <input type="text" id="z_pa" name="z_pa" style="width: 350px">
+                            <br>
+                         <br>
+
+                            <input type="submit" id="submitButton"  value="上传数据并更新图表" style="margin-left: 210px">
+                        </form>
+              </div>
+          </el-col>
+          <el-col :span="8"><div class="grid-content"></div></el-col>
+         </el-row>
+
+<!--      <form method="post" action="/test">-->
+<!--        <label>输入x坐标以逗号隔开:</label>-->
+<!--        <input type="text" id="x_values" name="x_values" >-->
+<!--        <br>-->
+<!--        <label>输入y坐标以逗号隔开:</label>-->
+<!--        <input type="text" id="y_values" name="y_values" >-->
+<!--        <br>-->
+<!--        <label>输入注射压力:</label>-->
+<!--        <input type="text" id="z_pa" name="z_pa" >-->
+<!--        <br>-->
+<!--        <input type="submit" id="submitButton"  value="Update Chart">-->
+<!--    </form>-->
+</div>
+
+    {% if image_base64 %}
+        <img src="data:image/png;base64,{{ image_base64 }}" alt="Matplotlib Image">
+    {% endif %}
+    </div>
+
+
+<script>
+  new Vue({
+      el: '#app'
+
+  })
+</script>
+</body>
+</html>

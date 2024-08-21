@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+      <!-- 引入Vue.js -->
+
+<script src="js/vue.min.js"></script>
+<!-- 引入Element UI样式 -->
+<link rel="stylesheet" href="css/index.css">
+<!-- 引入Element UI组件库 -->
+<script src="js/index.js"></script>
+<script src="js/axios.min.js"></script>
+<script src="js/echarts.min.js"></script>
+
+</head>
+<body>
+<div id="app">
+    <el-card>
+      <!-- 搜索和添加 -->
+      <!-- gutter每列之间的间隔 槽宽 -->
+      <div >
+          <el-input placeholder="请输入内容" class="input-with-select" style="width:15%" v-model="queryInfo.query" clearable @clear="getUserList">
+          </el-input>
+          <el-button type="primary" style="margin-left:10px" @click="getUserList">查 询</el-button>
+      </div>
+      <el-row style="margin-top: 20px">
+         <el-col :span="12">
+             <span>总额度:</span><span v-if="price > 0" v-text="price"></span>
+           <span style="padding: 20px">已用额度:</span><span v-text="sheng_y"></span>
+           <span style="padding: 20px">剩余额度:</span><span v-text="yy_ed"></span>
+            <div ref="pieChart" style="width: 600px; height: 300px;"></div>
+         </el-col>
+          <el-col :span="12">
+         <el-descriptions title="这里面的价格都是美元 充值1元等于1美元计数 价格浮动">
+         </el-descriptions>
+         <el-descriptions title="gpt3.5模型">
+        <el-descriptions-item label="模型">gpt-3.5-turbo-0125</el-descriptions-item>
+        <el-descriptions-item label="输入">0.0035/1K Tokens</el-descriptions-item>
+        <el-descriptions-item label="输出">0.0105/1K Tokens</el-descriptions-item>
+        </el-descriptions>
+
+         <el-descriptions title="gpt4模型">
+        <el-descriptions-item label="模型">gpt-4</el-descriptions-item>
+        <el-descriptions-item label="输入">0.21 / 1K Tokens</el-descriptions-item>
+        <el-descriptions-item label="输出">0.42 / 1K Tokens</el-descriptions-item>
+        </el-descriptions>
+          </el-col>
+      </el-row>
+
+
+
+      <!-- 用户表格-->
+      <!-- 一页有很多行，这个不用关心 会自动帮我们循环 stripe隔行展示 -->
+      <el-table :data="userList" border stripe>
+          <!-- type="index" 会自动排序 -->
+          <el-table-column type="index" label="索引"> </el-table-column>
+        <el-table-column prop="datetime" label="时间"> </el-table-column>
+        <el-table-column prop="api_key" label="apikey"> </el-table-column>
+        <el-table-column prop="content_id" label="请求id"> </el-table-column>
+        <el-table-column prop="input_token" label="输入token"> </el-table-column>
+        <el-table-column prop="output_token" label="输出token"> </el-table-column>
+        <el-table-column prop="c_amount" label="消耗金额"> </el-table-column>
+<!--        <el-table-column prop="last_login" label="最后登录时间"> </el-table-column>-->
+        <el-table-column prop="status" label="是否禁用">
+            <!--自定义模板 使用作用域插槽,通过scope.row获取当前行数据-->
+          <template #default="scope">
+            <div>
+              <el-switch
+                v-model="scope.row.id"
+                @change="userStateChange(scope.row)"
+              >
+              </el-switch>
+            </div>
+          </template>
+
+        </el-table-column>
+      </el-table>
+    <!-- 分页功能-->
+      <el-pagination
+        @size-change="handleSizeChange"
+        @current-change="handleCurrentChange"
+        :current-page="queryInfo.pagenum"
+        :page-sizes="[5,10,15,20]"
+        :page-size="queryInfo.pagesize"
+        layout="total, sizes, prev, pager, next, jumper"
+        :total="total"
+      >
+      </el-pagination>
+
+    </el-card>
+
+</div>
+
+
+
+
+
+
+
+<script>
+  new Vue({
+    el: '#app',
+
+    data() {
+    return {
+      // 基础路径
+      baseUrl:'http://127.0.0.1:7090',
+      // 展示用户列表信息
+      userList:[],
+      // 总条数
+      total:0,
+      // 查询用户列表参数对象
+      queryInfo:{
+        query:'',
+        // 当前页面
+        pagenum:1,
+        // 每页显示条数
+        pagesize:5,
+      },
+      ed:0,
+      price:0,
+      sheng_y:0,
+      yy_ed:0,
+      //   charts: "",
+      // opinion: ["及格人数", "未及格人数"],
+      // opinionData: [
+      //   { value: 12, name: "及格人数", itemStyle: "#1ab394" },
+      //   { value: 18, name: "未及格人数", itemStyle: "#79d2c0" }
+      // ]
+    };
+  },
+
+
+  mounted() {
+
+  },
+created(){
+    // this.getUserList()
+  },
+
+ methods: {
+  　
+
+
+    // 获取用户列表信息
+    async getUserList(){
+        let that = this
+        const{data:res} = await axios.get(that.baseUrl+'/api/list',{
+            params:this.queryInfo
+        })
+        this.total = res.total
+        this.userList = res.result
+        that.$message.success('成功!')
+
+         const{data:resp} = await axios.get(that.baseUrl+'/edu',{
+            params:this.queryInfo
+        })
+         this.price=resp.price
+         this.sheng_y=resp.sheng_y
+         this.yy_ed=resp.yy_ed
+         this.initChart();
+        console.log(this.price)
+
+    },
+    // 监听页面大小（pagesize）改变的事件(每页显示多少条)
+    handleSizeChange(pagesize){
+        // 改变pagesize的大小
+        this.queryInfo.pagesize = pagesize
+        // 重新加载用户列表数据
+        this.getUserList()
+    },
+    // 监听pagenum的事件(点击第几页)
+    handleCurrentChange(pagenum){
+        // 把页码改了
+        this.queryInfo.pagenum=pagenum
+        // 重新加载用户列表数据
+        this.getUserList()
+    },
+    // 监听 switch开关状态的改变
+    async userStateChange(userinfo){
+        let that = this
+        console.log(userinfo)
+        const {data:res} = await axios.put(that.baseUrl+'/app/login/?userid='+userinfo.id+"&state="+userinfo.status)
+        console.log(res)
+        if(res.code!=200){
+            //更新失败时回父为原始数据 （实际上点击按钮时就会更新状态，所以此时需要取反，回到原始）
+            userinfo.status = !userinfo.status
+            return that.$message.error('更新用户状态失败!')
+        }
+        that.$message.success('更新用户状态成功!')
+    }
+    ,
+    initChart() {
+      const chartDom = this.$refs.pieChart;
+      const myChart = echarts.init(chartDom);
+      const option = {
+        series: [
+          {
+            label: {
+              show: true,
+              // position: "putside",
+              formatter: "{b} {d}%",
+            },
+            type: 'pie',
+            data: [
+              { value: this.yy_ed, name: '已用额度' },
+              { value: this.sheng_y, name: '剩余额度' },
+            ],
+            radius: '50%',
+            center: ['50%', '60%']
+          }
+        ]
+      };
+
+      myChart.setOption(option);
+    }
+      ,
+  },
+
+
+
+
+
+
+
+
+  })
+</script>
+
+
+</body>
+</html>
